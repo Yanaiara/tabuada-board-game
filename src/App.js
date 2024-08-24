@@ -1,43 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-const boardSize = 25; // Tamanho do tabuleiro
-
 function App() {
   const [currentPosition, setCurrentPosition] = useState(0);
   const [num1, setNum1] = useState(0);
   const [num2, setNum2] = useState(0);
   const [answer, setAnswer] = useState('');
-  const [cells, setCells] = useState(Array(boardSize).fill(null));
-  const [feedback, setFeedback] = useState(Array(boardSize).fill(null));
+  const [cells, setCells] = useState([]);
+  const [feedback, setFeedback] = useState([]);
   const [message, setMessage] = useState('');
-  const [correctAnswer, setCorrectAnswer] = useState(0); // Armazena a resposta correta
+  const [correctAnswer, setCorrectAnswer] = useState(0);
+  const [playerName, setPlayerName] = useState('');
+  const [boardSize, setBoardSize] = useState(25);
+  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);  // Contador de acertos
+  const [wrongCount, setWrongCount] = useState(0);  // Contador de erros
 
   useEffect(() => {
-    generateQuestion();
-  }, []);
+    if (isGameStarted) {
+      generateQuestion();
+    }
+  }, [isGameStarted]);
 
   const generateQuestion = () => {
-    const newNum1 = Math.floor(Math.random() * 10); // Gera o primeiro número
-    const newNum2 = Math.floor(Math.random() * 10); // Gera o segundo número
+    const newNum1 = Math.floor(Math.random() * 10);
+    const newNum2 = Math.floor(Math.random() * 10);
     setNum1(newNum1);
     setNum2(newNum2);
-    setCorrectAnswer(newNum1 * newNum2); // Calcula e armazena a resposta correta
+    setCorrectAnswer(newNum1 * newNum2);
     setAnswer('');
-    setMessage(`Vamos lá, Maria Cecilia! Quanto é ${newNum1} x ${newNum2}?`);
+    setMessage(`Vamos lá, ${playerName}! Quanto é ${newNum1} x ${newNum2}?`);
+  };
+
+  const startGame = () => {
+    if (playerName.trim() && boardSize > 0) {
+      setCells(Array(boardSize).fill(null));
+      setFeedback(Array(boardSize).fill(null));
+      setIsGameStarted(true);
+    } else {
+      alert("Por favor, insira um nome válido e um tamanho de tabuleiro maior que zero.");
+    }
   };
 
   const checkAnswer = () => {
     const newFeedback = [...feedback];
 
     if (parseInt(answer) === correctAnswer) {
-      newFeedback[currentPosition] = '❤️'; // Coração para resposta correta
+      newFeedback[currentPosition] = '❤️';
       setFeedback(newFeedback);
-      setMessage('Parabéns, Maria Cecilia! Resposta correta!');
+      setCorrectCount(correctCount + 1);  // Incrementa o contador de acertos
+      setMessage(`Parabéns, ${playerName}! Resposta correta!`);
     } else {
-      newFeedback[currentPosition] = '😢'; // Carinha triste para resposta incorreta
+      newFeedback[currentPosition] = '😢';
       setFeedback(newFeedback);
-      setMessage(`Não desanime, Maria Cecilia! A resposta correta é ${correctAnswer}. Vamos tentar outra vez!`);
+      setWrongCount(wrongCount + 1);  // Incrementa o contador de erros
+      setMessage(`Não desanime, ${playerName}! A resposta correta é ${correctAnswer}. Vamos tentar outra vez!`);
     }
   };
 
@@ -48,41 +65,67 @@ function App() {
     generateQuestion();
   };
 
-  const tryAgain = () => {
-    setAnswer('');
-    setMessage(`Tente novamente, Maria Cecilia! Quanto é ${num1} x ${num2}?`);
-  };
-
   const movePlayer = () => {
     const newCells = [...cells];
-    newCells[currentPosition] = null; // Limpa a posição anterior
+    newCells[currentPosition] = null;
 
     if (currentPosition < boardSize - 1) {
       newCells[currentPosition + 1] = 'player';
       setCurrentPosition(currentPosition + 1);
-      setMessage('Boa, Maria Cecilia! Você avançou uma casa!');
+      setMessage(`Boa, ${playerName}! Você avançou uma casa!`);
     } else {
-      setMessage('Fantástico, Maria! Você é incrivel!');
-      resetGame();
+      setMessage(`Fantástico, ${playerName}! Você é incrível!`);
+      endGame();  // Chama o fim do jogo
     }
     setCells(newCells);
+  };
+
+  const endGame = () => {
+    alert(`Jogo Finalizado!\nAcertos: ${correctCount}\nErros: ${wrongCount}`);
+    resetGame();
   };
 
   const resetGame = () => {
     setCurrentPosition(0);
     setCells(Array(boardSize).fill(null));
     setFeedback(Array(boardSize).fill(null));
+    setCorrectCount(0);  // Reseta o contador de acertos
+    setWrongCount(0);  // Reseta o contador de erros
     generateQuestion();
   };
 
+  if (!isGameStarted) {
+    return (
+      <div className="App">
+        <h1>Bem-vindo ao jogo da Tabuada!</h1>
+        <input
+          type="text"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          placeholder="Nome do Jogador"
+          style={{ marginBottom: '20px' }}
+        />
+        <input
+          type="number"
+          min="1"
+          value={boardSize}
+          onChange={(e) => setBoardSize(parseInt(e.target.value))}
+          placeholder="Tamanho do Tabuleiro"
+          style={{ marginBottom: '20px' }}
+        />
+        <button onClick={startGame}>Iniciar Jogo</button>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
-      <h1>Tabuada da Maria</h1>
-      <div className="board">
+      <h1>Tabuada da {playerName}</h1>
+      <div className="board" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(60px, 1fr))` }}>
         {cells.map((cell, index) => (
           <div key={index} className="cell">
             {cell === 'player' && <div className="player"></div>}
-            {feedback[index]} {/* Exibe o coração ou carinha triste */}
+            {feedback[index]}
           </div>
         ))}
       </div>
